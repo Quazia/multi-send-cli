@@ -1,0 +1,18 @@
+{
+  "name": "multi-send",
+  "version": "0.1.0",
+  "description": "",
+  "main": "index.js",
+  "preferGlobal": true,
+  "bin": "./multi-send.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Arthur Lunn",
+  "license": "GPL-3.0-or-later",
+  "dependencies": {
+    "commander": "^2.13.0",
+    "inquirer": "^5.0.0"
+  }
+}
