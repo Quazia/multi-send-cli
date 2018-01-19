@@ -3,22 +3,23 @@
   can redistribute it and/or modify it under the terms of the GNU General 
   Public License as published by the Free Software Foundation, version. 
   This program is distributed in the hope that it will be useful, 
-  but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+  but WITHOUT ANY WARRANTY without even the implied warranty of MERCHANTABILITY
   or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
   more details. You should have received a copy of the GNU General Public
   License along with this program. If not, see http://www.gnu.org/licenses/
   */
 
 
-const program = require('commander');
-var inquirer = require('inquirer');
+const program = require('commander')
+var inquirer = require('inquirer')
 
 const { 
   processPacked, 
-  processUnpacked
-} = require('./logic'); 
+  processUnpacked,
+  doMilestones
+} = require('./logic') 
 
-const questions = [
+const packingQs = [
   {
     type : 'input',
     name : 'address',
@@ -35,30 +36,50 @@ const questions = [
     message : 'Would you like to add another???'
   }
 
-];
+]
 
-let addresses = [];
-let amounts = [];
+const milestoneQs = [
+  {
+    type : 'input',
+    name : 'startBlock',
+    message : 'Enter start block ..'
+  },
+  {
+    type : 'input',
+    name : 'endBlock',
+    message : 'Enter end block ..'
+  }
 
-function ask(status) {
-  inquirer.prompt(questions).then(answers => {
-    addresses.push(answers.address);
-    amounts.push(answers.amount);
+]
+
+let addresses = []
+let amounts = []
+
+function askPacking(status) {
+  inquirer.prompt(packingQs).then(answers => {
+    addresses.push(answers.address)
+    amounts.push(answers.amount)
     if (answers.continue) {
-      ask();
+      ask()
     } else {
       for(let i =0; i < addresses.length; i++){
-        console.log('Sending ' + amounts[i] + ' to ' + addresses[i]);
+        console.log('Sending ' + amounts[i] + ' to ' + addresses[i])
       }
       if(status == 'u'){
-        processUnpacked(addresses, amounts);
+        processUnpacked(addresses, amounts)
       } else {
-        processPacked(addresses, amounts);          
+        processPacked(addresses, amounts)          
       }
     }
-  });
+  })
 }
 
+
+function askMilestones(status) {
+  inquirer.prompt(milestoneQs).then(answers => {
+    doMilestones(answers.startBlock, answers.endBlock)
+  })
+}
 
 program
   .version('0.0.1')
@@ -69,21 +90,31 @@ program
   .alias('u')
   .description('Add a series of addresses unpacked')
   .action(() => {
-    ask('u');
-  });
+    askPacking('u')
+  })
+
 
 program
   .command('addAddressesPacked')
   .alias('p')
   .description('Add a series of addresses packed')
   .action(() => {
-    ask('p');
-  });
+    askPacking('p')
+  })
+
+  program
+  .command('getMilestoneString')
+  .alias('m')
+  .description('pull Milestone data from last string')
+  .action(() => {
+    askMilestones()
+  })
+
 
 // Assert that a VALID command is provided 
-if (!process.argv.slice(2).length || !/[up]/.test(process.argv.slice(2))) {
-  program.outputHelp();
-  process.exit();
+if (!process.argv.slice(2).length || !/[mup]/.test(process.argv.slice(2))) {
+  program.outputHelp()
+  process.exit()
 }
 
 program.parse(process.argv)

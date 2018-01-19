@@ -58,6 +58,10 @@ const processPacked = (addresses, amounts) => {
   console.log(mainString);
 };
 
+const doMilestones = (startBlock, endBlock) => {
+  // This is where the magic hapens
+}
+
 const checkAddress = (address) => {
   if(!address.match(/\b0x[0-9A-F]{40}\b/gi)){
     throw new Error("Oi, that's not an address m8, try harder!");
