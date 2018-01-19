@@ -28,7 +28,7 @@ const packingQs = [
   {
     type : 'input',
     name : 'amount',
-    message : 'Enter amount ..'
+    message : 'Enter amount (in wei) ..'
   },
   {
     type : 'confirm',
@@ -48,8 +48,12 @@ const milestoneQs = [
     type : 'input',
     name : 'endBlock',
     message : 'Enter end block ..'
+  },
+  {
+    type : 'confirm',
+    name : 'packed',
+    message : 'Would you like these packed?'
   }
-
 ]
 
 let addresses = []
@@ -62,9 +66,6 @@ function askPacking(status) {
     if (answers.continue) {
       ask()
     } else {
-      for(let i =0; i < addresses.length; i++){
-        console.log('Sending ' + amounts[i] + ' to ' + addresses[i])
-      }
       if(status == 'u'){
         processUnpacked(addresses, amounts)
       } else {
@@ -77,7 +78,7 @@ function askPacking(status) {
 
 function askMilestones(status) {
   inquirer.prompt(milestoneQs).then(answers => {
-    doMilestones(answers.startBlock, answers.endBlock)
+    doMilestones(answers.startBlock, answers.endBlock, answers.packed)
   })
 }
 

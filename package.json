@@ -13,6 +13,7 @@
   "license": "GPL-3.0-or-later",
   "dependencies": {
     "commander": "^2.13.0",
-    "inquirer": "^5.0.0"
+    "inquirer": "^5.0.0",
+    "web3": "1.0.0-beta.27"
   }
 }
