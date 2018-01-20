@@ -35,7 +35,6 @@ const packingQs = [
     name : 'continue',
     message : 'Would you like to add another???'
   }
-
 ]
 
 const milestoneQs = [
@@ -53,8 +52,22 @@ const milestoneQs = [
     type : 'confirm',
     name : 'packed',
     message : 'Would you like these packed?'
+  },
+  {
+    type : 'confirm',
+    name : 'doSend',
+    message : 'Would you like to send to the multi-sig?'
   }
 ]
+
+const askKey = [
+  {
+    type : 'input',
+    name : 'pKey',
+    message : 'GIFF PRIVATE KEY PLOX?'
+  }
+]
+
 
 let addresses = []
 let amounts = []
@@ -76,10 +89,12 @@ function askPacking(status) {
 }
 
 
-function askMilestones(status) {
-  inquirer.prompt(milestoneQs).then(answers => {
-    doMilestones(answers.startBlock, answers.endBlock, answers.packed)
-  })
+async function askMilestones(status) {
+  let answers = await inquirer.prompt(milestoneQs)
+  if(answers.doSend){
+    let keyAnswer = await inquirer.prompt(askKey)
+  }
+  doMilestones(answers.startBlock, answers.endBlock, answers.packed)
 }
 
 program
