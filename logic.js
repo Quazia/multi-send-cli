@@ -7,10 +7,12 @@
   more details. You should have received a copy of the GNU General Public
   License along with this program. If not, see http://www.gnu.org/licenses/
   */
-
+require('es6-promise').polyfill();
+require('isomorphic-fetch');
 const assert = require('assert')
 const Web3 = require('web3')
 const provider = `wss://rinkeby.infura.io/ws`
+
 
 let web3 = new Web3(new Web3.providers.WebsocketProvider(provider))
 
@@ -147,16 +149,25 @@ const doMilestones = (startBlock, endBlock, packed, key, verify) => {
   let milestoneContract = setupContract()
   let addresses = []
   let amounts = []
-  
   milestoneContract.getPastEvents('MilestoneAccepted',
     {fromBlock: startBlock,  toBlock: endBlock},
     async (error, logs) => {
     if (error) console.error(error);
     for(let i = 0; i < logs.length; i ++) {
-      let milestone = await milestoneContract.methods.getMilestone(logs[i].returnValues.idProject).call()
+      id = logs[i].returnValues.idProject
+      let milestone = await milestoneContract.methods.getMilestone(id).call()
       if(verify){
-        let dappData = await fetch("https://feathersprod.giveth.io/milestones?projectId="+idProject)
-        if(dappData.maxAmount != milestone.maxAmount || dappData.recipient != dappData.recipient){
+        let dappBody = await fetch("https://feathersprod.giveth.io/milestones?projectId="+id)
+        let dappJSON = await dappData.json()
+        console.log(dappJSON)
+
+        dappAmount = dappJSON.maxAmount
+        dappAddr = dappJSON.recipient
+        console.log(dappAmount)
+        console.log(dappAddr)
+        if(dappAmount != milestone.maxAmount || dappAddr != milestone.recipient){
+          console.log('Inconsistency found with sending ' + ( milestone.maxAmount / (10**18) ) + "ETH to " + milestone.recipient)
+          console.log('DApp shows a send of ' + ( dappAmount / (10**18) ) + "ETH to " + dappAddr)
           continue
         }
       }

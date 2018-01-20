@@ -13,7 +13,9 @@
   "license": "GPL-3.0-or-later",
   "dependencies": {
     "commander": "^2.13.0",
+    "es6-promise": "^4.2.2",
     "inquirer": "^5.0.0",
+    "isomorphic-fetch": "^2.2.1",
     "web3": "1.0.0-beta.27"
   }
 }

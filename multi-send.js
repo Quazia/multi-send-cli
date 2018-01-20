@@ -98,11 +98,10 @@ async function askMilestones(status) {
   let answers = await inquirer.prompt(milestoneQs)
   if(answers.doSend){
     let keyAnswer = await inquirer.prompt(askKey)
-    doMilestones(answers.startBlock, answers.endBlock, answers.packed, keyAnswer.pKey)
+    doMilestones(answers.startBlock, answers.endBlock, answers.packed, keyAnswer.pKey, answers.doVerify)
   } else {
-    doMilestones(answers.startBlock, answers.endBlock, answers.packed, null)    
+    doMilestones(answers.startBlock, answers.endBlock, answers.packed, null, answers.doVerify)    
   }
-  
 }
 
 program
