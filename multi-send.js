@@ -57,6 +57,11 @@ const milestoneQs = [
     type : 'confirm',
     name : 'doSend',
     message : 'Would you like to send to the multi-sig?'
+  },
+  {
+    type : 'confirm',
+    name : 'doVerify',
+    message : 'Would you like to check against the DApp?'
   }
 ]
 
@@ -64,7 +69,7 @@ const askKey = [
   {
     type : 'input',
     name : 'pKey',
-    message : 'GIFF PRIVATE KEY PLOX?'
+    message : 'Let me get that key tho sweet thaaaaaaangggg'
   }
 ]
 

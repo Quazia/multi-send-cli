@@ -138,6 +138,11 @@ const setupContract =  () => {
   return new web3.eth.Contract(HARDCODED_MILESTONE_ABI, HARDCODED_MILESTONE_ADDR)
 }
 
+
+const checkAgainstDApp = (addresses, amounts) => {
+
+}
+
 const doMilestones = (startBlock, endBlock, packed, key, verify) => {
   let milestoneContract = setupContract()
   let addresses = []
@@ -149,6 +154,12 @@ const doMilestones = (startBlock, endBlock, packed, key, verify) => {
     if (error) console.error(error);
     for(let i = 0; i < logs.length; i ++) {
       let milestone = await milestoneContract.methods.getMilestone(logs[i].returnValues.idProject).call()
+      if(verify){
+        let dappData = await fetch("https://feathersprod.giveth.io/milestones?projectId="+idProject)
+        if(dappData.maxAmount != milestone.maxAmount || dappData.recipient != dappData.recipient){
+          continue
+        }
+      }
       amounts.push(milestone.maxAmount)
       addresses.push(milestone.recipient)
     }
