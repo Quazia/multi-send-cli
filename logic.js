@@ -138,7 +138,7 @@ const setupContract =  () => {
   return new web3.eth.Contract(HARDCODED_MILESTONE_ABI, HARDCODED_MILESTONE_ADDR)
 }
 
-const doMilestones = (startBlock, endBlock, packed) => {
+const doMilestones = (startBlock, endBlock, packed, key, verify) => {
   let milestoneContract = setupContract()
   let addresses = []
   let amounts = []
@@ -152,10 +152,14 @@ const doMilestones = (startBlock, endBlock, packed) => {
       amounts.push(milestone.maxAmount)
       addresses.push(milestone.recipient)
     }
-    if(packed){
-      processPacked(addresses, amounts)
+    if(verify){
+      checkAgainstDApp(addresses, amounts)
     } else {
-      processUnpacked(addresses, amounts)
+      if(packed){
+        processPacked(addresses, amounts)
+      } else {
+        processUnpacked(addresses, amounts)
+      }
     }
   })
 }
