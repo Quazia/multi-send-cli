@@ -12,6 +12,7 @@
   "author": "Arthur Lunn",
   "license": "GPL-3.0-or-later",
   "dependencies": {
+    "big-integer": "^1.6.26",
     "commander": "^2.13.0",
     "es6-promise": "^4.2.2",
     "inquirer": "^5.0.0",

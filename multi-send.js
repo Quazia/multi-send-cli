@@ -62,7 +62,12 @@ const milestoneQs = [
     type : 'confirm',
     name : 'doVerify',
     message : 'Would you like to check against the DApp?'
-  }
+  }/*,
+  {
+    type : 'confirm',
+    name : 'checkDups',
+    message : 'Would you like to check for duplicate amounts?' 
+  }*/
 ]
 
 const askKey = [

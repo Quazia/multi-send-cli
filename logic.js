@@ -9,9 +9,11 @@
   */
 require('es6-promise').polyfill();
 require('isomorphic-fetch');
+const bigInt = require("big-integer")
 const assert = require('assert')
 const Web3 = require('web3')
 const provider = `wss://rinkeby.infura.io/ws`
+const fs = require('fs')
 
 
 let web3 = new Web3(new Web3.providers.WebsocketProvider(provider))
@@ -88,13 +90,14 @@ const HARDCODED_MILESTONE_ABI = [
  * @function  [processUnpacked]
  * @returns {String} Status
  */
-const processUnpacked = (addresses, amounts) => {
+const processUnpacked = (addresses, amounts, infoStrings) => {
   let addrStr = "["
   let amountStr = "["
   if(addresses.length != amounts.length){
     console.log("addresses should = amounts you dun goofed")
   }
   for(let i = 0; i < addresses.length; i++){
+    console.log("Milestone" + infoStrings[i])
     console.log('Sending ' + ( amounts[i] / (10**18) ) + "ETH to " + addresses[i])
     addr = checkAddress(addresses[i])
     addrStr += addr
@@ -140,15 +143,35 @@ const setupContract =  () => {
   return new web3.eth.Contract(HARDCODED_MILESTONE_ABI, HARDCODED_MILESTONE_ADDR)
 }
 
+const parseToCSV = (rows) => {
+  let csvContent = "data:text/csv;charset=utf-8,";
+  rows.forEach(function(rowArray){
+     let row = rowArray.join(",")
+     csvContent += row + "\r\n" // add carriage return
+  });
+  return csvContent  
+}
 
-const checkAgainstDApp = (addresses, amounts) => {
 
+
+const generateMilestoneCSV = (addresses, amounts, infoStrings) => {
+  rows = []
+  for(let i = 0; i < amounts.length; i++){
+    rows.push([addresses[i], amounts[i], infoStrings[i]])
+  }
+
+  fs.writeFile('./MilestoneOutput.csv', parseToCSV(rows), function (err) {
+    if (err) throw err;
+    console.log('All output added to MilestoneOutput.csv')
+  });
 }
 
 const doMilestones = (startBlock, endBlock, packed, key, verify) => {
   let milestoneContract = setupContract()
   let addresses = []
   let amounts = []
+  let amountTotal = new bigInt(0, 10)
+  let infoStrings = []
   milestoneContract.getPastEvents('MilestoneAccepted',
     {fromBlock: startBlock,  toBlock: endBlock},
     async (error, logs) => {
@@ -156,33 +179,35 @@ const doMilestones = (startBlock, endBlock, packed, key, verify) => {
     for(let i = 0; i < logs.length; i ++) {
       id = logs[i].returnValues.idProject
       let milestone = await milestoneContract.methods.getMilestone(id).call()
+      // Make more efficient using roomId[$in]=2&roomId[$in]=5
+      let dappBody = await fetch("https://feathersprod.giveth.io/milestones?projectId="+id)
+      let dappJSON = await dappBody.json()
+      let dappData = dappJSON.data[0] 
+      dappAmount = dappData.maxAmount
+      dappAddr = dappData.recipientAddress
+      let infoString = "https://alpha.giveth.io/campaigns/"+dappData.campaign._id+"/milestones/"+dappData._id
       if(verify){
-        let dappBody = await fetch("https://feathersprod.giveth.io/milestones?projectId="+id)
-        let dappJSON = await dappData.json()
-        console.log(dappJSON)
-
-        dappAmount = dappJSON.maxAmount
-        dappAddr = dappJSON.recipient
-        console.log(dappAmount)
-        console.log(dappAddr)
         if(dappAmount != milestone.maxAmount || dappAddr != milestone.recipient){
           console.log('Inconsistency found with sending ' + ( milestone.maxAmount / (10**18) ) + "ETH to " + milestone.recipient)
           console.log('DApp shows a send of ' + ( dappAmount / (10**18) ) + "ETH to " + dappAddr)
+          console.log("Somebody in " + dappData.campaign.title +" dun screwed the pooch... \nCampaign ID: " + dappData.campaign._id + "\nMilestone ID: " + dappData._id)
+          console.log("Check the milestone at " + infoString)
           continue
         }
       }
+      // aggregate these data structures into an array of json objects
+      amountTotal = amountTotal.add(milestone.maxAmount) 
       amounts.push(milestone.maxAmount)
       addresses.push(milestone.recipient)
+      infoStrings.push(infoString)
     }
-    if(verify){
-      checkAgainstDApp(addresses, amounts)
+    if(packed){
+      processPacked(addresses, amounts, infoStrings)
     } else {
-      if(packed){
-        processPacked(addresses, amounts)
-      } else {
-        processUnpacked(addresses, amounts)
-      }
+      processUnpacked(addresses, amounts, infoStrings)
     }
+    console.log("Total amount sent: " + amountTotal)
+    generateMilestoneCSV(addresses, amounts, infoStrings)
   })
 }
 
@@ -195,7 +220,7 @@ const checkAddress = (address) => {
 
 
 const convertAmount = (amount) => {
-  amount = parseInt(amount, 10)
+  amount = bigInt(amount, 10)
   amount = amount.toString(16)
   if(amount.length > 16){
     throw new Error("hey, that's too many ethers d00d!")
