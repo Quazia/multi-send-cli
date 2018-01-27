@@ -15,6 +15,8 @@ const Web3 = require('web3')
 const provider = `wss://rinkeby.infura.io/ws`
 const fs = require('fs')
 
+let amountTotal = new bigInt(0)
+
 
 let web3 = new Web3(new Web3.providers.WebsocketProvider(provider))
 
@@ -154,50 +156,52 @@ const parseToCSV = (rows) => {
 
 
 
-const generateMilestoneCSV = (addresses, amounts, infoStrings) => {
+const generateMilestoneCSV = (addresses, amounts, infoStrings, startBlock, endBlock) => {
   rows = []
   for(let i = 0; i < amounts.length; i++){
     rows.push([addresses[i], amounts[i], infoStrings[i]])
   }
 
-  fs.writeFile('./MilestoneOutput.csv', parseToCSV(rows), function (err) {
+  fs.writeFile('./MilestoneOutput' + startBlock + '-' + endBlock + '.csv', parseToCSV(rows), function (err) {
     if (err) throw err;
-    console.log('All output added to MilestoneOutput.csv')
+    console.log('All output added to MilestoneOutput' + startBlock + '-' + endBlock + '.csv')
   });
 }
 
-const doMilestones = (startBlock, endBlock, packed, key, verify) => {
+const doMilestones = (startBlock, endBlock, milestoneDepth, packed, key, verify) => {
   let milestoneContract = setupContract()
   let addresses = []
   let amounts = []
-  let amountTotal = new bigInt(0, 10)
   let infoStrings = []
+  let currentBlock = startBlock
   milestoneContract.getPastEvents('MilestoneAccepted',
     {fromBlock: startBlock,  toBlock: endBlock},
     async (error, logs) => {
     if (error) console.error(error);
-    for(let i = 0; i < logs.length; i ++) {
+    for(i = 0; i < logs.length && i < milestoneDepth; i ++) {
       id = logs[i].returnValues.idProject
       let milestone = await milestoneContract.methods.getMilestone(id).call()
       // Make more efficient using roomId[$in]=2&roomId[$in]=5
-      let dappBody = await fetch("https://feathersprod.giveth.io/milestones?projectId="+id)
+      currentBlock = logs[i].blockNumber
+      let dappBody = await fetch("https://feathers.alpha.giveth.io/milestones?projectId="+id)
+
       let dappJSON = await dappBody.json()
       let dappData = dappJSON.data[0] 
-      dappAmount = dappData.maxAmount
+      dappAmount = bigInt(dappData.maxAmount, 10)
       dappAddr = dappData.recipientAddress
       let infoString = "https://alpha.giveth.io/campaigns/"+dappData.campaign._id+"/milestones/"+dappData._id
       if(verify){
         if(dappAmount != milestone.maxAmount || dappAddr != milestone.recipient){
-          console.log('Inconsistency found with sending ' + ( milestone.maxAmount / (10**18) ) + "ETH to " + milestone.recipient)
+          console.log('Inconsistency found with sending ' + ( dappAmount.div(10**18) ) + "ETH to " + milestone.recipient)
           console.log('DApp shows a send of ' + ( dappAmount / (10**18) ) + "ETH to " + dappAddr)
           console.log("Somebody in " + dappData.campaign.title +" dun screwed the pooch... \nCampaign ID: " + dappData.campaign._id + "\nMilestone ID: " + dappData._id)
           console.log("Check the milestone at " + infoString)
           continue
         }
       }
+      console.log("Milestone block is " + currentBlock)
       // aggregate these data structures into an array of json objects
-      amountTotal = amountTotal.add(milestone.maxAmount) 
-      amounts.push(milestone.maxAmount)
+      amounts.push(dappAmount)
       addresses.push(milestone.recipient)
       infoStrings.push(infoString)
     }
@@ -207,7 +211,8 @@ const doMilestones = (startBlock, endBlock, packed, key, verify) => {
       processUnpacked(addresses, amounts, infoStrings)
     }
     console.log("Total amount sent: " + amountTotal)
-    generateMilestoneCSV(addresses, amounts, infoStrings)
+    generateMilestoneCSV(addresses, amounts, infoStrings, startBlock, currentBlock)
+    
   })
 }
 
@@ -220,8 +225,13 @@ const checkAddress = (address) => {
 
 
 const convertAmount = (amount) => {
+  console.log(amount)
   amount = bigInt(amount, 10)
+  console.log(amount)
+  amountTotal = amountTotal.add(amount)
   amount = amount.toString(16)
+  console.log(amount)
+
   if(amount.length > 16){
     throw new Error("hey, that's too many ethers d00d!")
   }

@@ -49,6 +49,11 @@ const milestoneQs = [
     message : 'Enter end block ..'
   },
   {
+    type : 'input',
+    name : 'milestoneDepth',
+    message : 'Enter max number of milestones ..'
+  },
+  {
     type : 'confirm',
     name : 'packed',
     message : 'Would you like these packed?'
@@ -103,9 +108,9 @@ async function askMilestones(status) {
   let answers = await inquirer.prompt(milestoneQs)
   if(answers.doSend){
     let keyAnswer = await inquirer.prompt(askKey)
-    doMilestones(answers.startBlock, answers.endBlock, answers.packed, keyAnswer.pKey, answers.doVerify)
+    doMilestones(answers.startBlock, answers.endBlock, answers.milestoneDepth, answers.packed, keyAnswer.pKey, answers.doVerify)
   } else {
-    doMilestones(answers.startBlock, answers.endBlock, answers.packed, null, answers.doVerify)    
+    doMilestones(answers.startBlock, answers.endBlock, answers.milestoneDepth, answers.packed, null, answers.doVerify)    
   }
 }
 
