@@ -12,6 +12,8 @@
 
 const program = require('commander')
 var inquirer = require('inquirer')
+const bigInt = require("big-integer")
+
 
 const { 
   processPacked, 
@@ -36,6 +38,7 @@ const packingQs = [
     message : 'Would you like to add another???'
   }
 ]
+
 
 const milestoneQs = [
   {
@@ -67,7 +70,13 @@ const milestoneQs = [
     type : 'confirm',
     name : 'doVerify',
     message : 'Would you like to check against the DApp?'
-  }/*,
+  },
+  {
+    type: 'confirm',
+    name: 'isTest',
+    message: 'Is this a test send..'
+  }
+  /*,
   {
     type : 'confirm',
     name : 'checkDups',
@@ -92,7 +101,7 @@ function askPacking(status) {
     addresses.push(answers.address)
     amounts.push(answers.amount)
     if (answers.continue) {
-      ask()
+      askPacking()
     } else {
       if(status == 'u'){
         processUnpacked(addresses, amounts)
@@ -108,9 +117,9 @@ async function askMilestones(status) {
   let answers = await inquirer.prompt(milestoneQs)
   if(answers.doSend){
     let keyAnswer = await inquirer.prompt(askKey)
-    doMilestones(answers.startBlock, answers.endBlock, answers.milestoneDepth, answers.packed, keyAnswer.pKey, answers.doVerify)
+    doMilestones(answers.startBlock, answers.endBlock, answers.milestoneDepth, answers.packed, keyAnswer.pKey, answers.doVerify, answers.isTest)
   } else {
-    doMilestones(answers.startBlock, answers.endBlock, answers.milestoneDepth, answers.packed, null, answers.doVerify)    
+    doMilestones(answers.startBlock, answers.endBlock, answers.milestoneDepth, answers.packed, null, answers.doVerify, answers.isTest)    
   }
 }
 

@@ -98,6 +98,7 @@ const processUnpacked = (addresses, amounts, infoStrings) => {
   if(addresses.length != amounts.length){
     console.log("addresses should = amounts you dun goofed")
   }
+  console.log("Total amount sent: " + String(amountTotal))
   for(let i = 0; i < addresses.length; i++){
     console.log("Milestone" + infoStrings[i])
     console.log('Sending ' + ( amounts[i] / (10**18) ) + "ETH to " + addresses[i])
@@ -111,6 +112,7 @@ const processUnpacked = (addresses, amounts, infoStrings) => {
   }
   addrStr += "]"
   amountStr += "]"
+  console.log("Total amount sent: " + String(amountTotal))  
   console.log("addresses:" + addrStr)
   console.log("amounts:" + amountStr)
 }
@@ -138,6 +140,7 @@ const processPacked = (addresses, amounts) => {
     }
   }
   mainString += "]"
+  console.log("Total amount sent: " + String(amountTotal))
   console.log(mainString)
 }
 
@@ -168,7 +171,7 @@ const generateMilestoneCSV = (addresses, amounts, infoStrings, startBlock, endBl
   });
 }
 
-const doMilestones = (startBlock, endBlock, milestoneDepth, packed, key, verify) => {
+const doMilestones = (startBlock, endBlock, milestoneDepth, packed, key, verify, test) => {
   let milestoneContract = setupContract()
   let addresses = []
   let amounts = []
@@ -192,8 +195,8 @@ const doMilestones = (startBlock, endBlock, milestoneDepth, packed, key, verify)
       let infoString = "https://alpha.giveth.io/campaigns/"+dappData.campaign._id+"/milestones/"+dappData._id
       if(verify){
         if(dappAmount != milestone.maxAmount || dappAddr != milestone.recipient){
-          console.log('Inconsistency found with sending ' + ( dappAmount.div(10**18) ) + "ETH to " + milestone.recipient)
-          console.log('DApp shows a send of ' + ( dappAmount / (10**18) ) + "ETH to " + dappAddr)
+          console.log('Inconsistency found with sending ' + ( dappAmount.divide(10**18) ) + "ETH to " + milestone.recipient)
+          console.log('DApp shows a send of ' + ( dappAmount.divide(10**18) ) + "ETH to " + dappAddr)
           console.log("Somebody in " + dappData.campaign.title +" dun screwed the pooch... \nCampaign ID: " + dappData.campaign._id + "\nMilestone ID: " + dappData._id)
           console.log("Check the milestone at " + infoString)
           continue
@@ -201,7 +204,12 @@ const doMilestones = (startBlock, endBlock, milestoneDepth, packed, key, verify)
       }
       console.log("Milestone block is " + currentBlock)
       // aggregate these data structures into an array of json objects
-      amounts.push(dappAmount)
+      if(test){
+        amounts.push(dappAmount.divide(10**8))        
+      }
+      else{
+        amounts.push(dappAmount)
+      }
       addresses.push(milestone.recipient)
       infoStrings.push(infoString)
     }
@@ -210,7 +218,6 @@ const doMilestones = (startBlock, endBlock, milestoneDepth, packed, key, verify)
     } else {
       processUnpacked(addresses, amounts, infoStrings)
     }
-    console.log("Total amount sent: " + amountTotal)
     generateMilestoneCSV(addresses, amounts, infoStrings, startBlock, currentBlock)
     
   })
@@ -225,12 +232,9 @@ const checkAddress = (address) => {
 
 
 const convertAmount = (amount) => {
-  console.log(amount)
   amount = bigInt(amount, 10)
-  console.log(amount)
   amountTotal = amountTotal.add(amount)
   amount = amount.toString(16)
-  console.log(amount)
 
   if(amount.length > 16){
     throw new Error("hey, that's too many ethers d00d!")
