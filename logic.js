@@ -171,7 +171,29 @@ const generateMilestoneCSV = (addresses, amounts, infoStrings, startBlock, endBl
   });
 }
 
-const doMilestones = (startBlock, endBlock, milestoneDepth, packed, key, verify, test) => {
+const getCampaigns = async () => {
+  let campaignsJSON = await fetch('https://feathers.alpha.giveth.io/campaigns?$select[]=title&$select[]=_id')
+  return campaignsJSON.data
+}
+
+const getCampaignTitleArray = ( campaignJSON ) => {
+  let campaignArray
+  for(i = 0; i < campaignJSON.length; i++){
+    campaignArray.push(campaignJSON[i].title)
+  }
+  return campaignArray
+}
+
+const getCampaignID = (campaignTitle, campaignJSON) => {
+  for(i = 0; i < campaignJSON.length; i++){
+    if (campaignJSON[i].title === campaignTitle){
+      return campaignJSON[i]._id
+    }
+  }
+  return null
+}
+
+const doMilestones = (startBlock, endBlock, milestoneDepth, packed, key, verify, test, blockedCampaignId) => {
   let milestoneContract = setupContract()
   let addresses = []
   let amounts = []
@@ -183,15 +205,20 @@ const doMilestones = (startBlock, endBlock, milestoneDepth, packed, key, verify,
     if (error) console.error(error);
     for(i = 0; i < logs.length && i < milestoneDepth; i ++) {
       id = logs[i].returnValues.idProject
+      
       let milestone = await milestoneContract.methods.getMilestone(id).call()
       // Make more efficient using roomId[$in]=2&roomId[$in]=5
       currentBlock = logs[i].blockNumber
       let dappBody = await fetch("https://feathers.alpha.giveth.io/milestones?projectId="+id)
 
       let dappJSON = await dappBody.json()
-      let dappData = dappJSON.data[0] 
+      let dappData = dappJSON.data[0]
+      if(dappData.campaign._id === blockedCampaignId){
+        continue
+      }
       dappAmount = bigInt(dappData.maxAmount, 10)
       dappAddr = dappData.recipientAddress
+      
       let infoString = "https://alpha.giveth.io/campaigns/"+dappData.campaign._id+"/milestones/"+dappData._id
       if(verify){
         if(dappAmount != milestone.maxAmount || dappAddr != milestone.recipient){
@@ -233,12 +260,13 @@ const checkAddress = (address) => {
 
 const convertAmount = (amount) => {
   amount = bigInt(amount, 10)
+  if(amount > bigInt(2).pow(96).subtract(1)){
+    throw new Error("hey, that's too many ethers d00d!  " + amount)
+  }
   amountTotal = amountTotal.add(amount)
   amount = amount.toString(16)
 
-  if(amount.length > 16){
-    throw new Error("hey, that's too many ethers d00d!")
-  }
+
   amount = padZeroes(24, amount)
   return amount
 }
@@ -254,6 +282,9 @@ const padZeroes = (length, value) => {
 module.exports = {
   doMilestones,   
   processPacked, 
-  processUnpacked
+  processUnpacked,
+  getCampaigns,
+  getCampaignID,
+  getCampaignTitleArray
 }
 

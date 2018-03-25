@@ -75,6 +75,13 @@ const milestoneQs = [
     type: 'confirm',
     name: 'isTest',
     message: 'Is this a test send..'
+  },
+  {
+    // Need full implementation
+    type: 'list',
+    name: 'project',
+    message: 'What project would you like to get milestones from?',
+    choices: ['ScalingNow']
   }
   /*,
   {
@@ -117,9 +124,9 @@ async function askMilestones(status) {
   let answers = await inquirer.prompt(milestoneQs)
   if(answers.doSend){
     let keyAnswer = await inquirer.prompt(askKey)
-    doMilestones(answers.startBlock, answers.endBlock, answers.milestoneDepth, answers.packed, keyAnswer.pKey, answers.doVerify, answers.isTest)
+    doMilestones(answers.startBlock, answers.endBlock, answers.milestoneDepth, answers.packed, keyAnswer.pKey, answers.doVerify, answers.isTest, "ap6KXg8iJwwUAxBY")
   } else {
-    doMilestones(answers.startBlock, answers.endBlock, answers.milestoneDepth, answers.packed, null, answers.doVerify, answers.isTest)    
+    doMilestones(answers.startBlock, answers.endBlock, answers.milestoneDepth, answers.packed, null, answers.doVerify, answers.isTest, "ap6KXg8iJwwUAxBY")    
   }
 }
 

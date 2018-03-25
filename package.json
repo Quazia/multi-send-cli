@@ -10,7 +10,7 @@
   },
   "keywords": [],
   "author": "Arthur Lunn",
-  "license": "GPL-3.0-or-later",
+  "license": "GPL-3.0+",
   "dependencies": {
     "big-integer": "^1.6.26",
     "commander": "^2.13.0",
