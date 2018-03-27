@@ -154,7 +154,7 @@ program
   program
   .command('getMilestoneString')
   .alias('m')
-  .description('pull Milestone data from last string')
+  .description('Scrape the Giveth web app for payouts in a certain range of blocks')
   .action(() => {
     askMilestones()
   })
