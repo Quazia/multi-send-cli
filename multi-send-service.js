@@ -15,12 +15,17 @@
  const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
  const TOKEN_PATH = 'credentials.json';
  const bigInt = require("big-integer")
- const { utils } = require('web3')
 
+const Web3 = require('web3')
+const provider = `wss://rinkeby.infura.io/_ws`
+let web3 = new Web3(new Web3.providers.WebsocketProvider(provider))
+
+ 
  const { 
    processPacked, 
    processUnpacked,
-   doMilestones
+   doMilestones,
+   getMilestoneData
  } = require('./logic') 
 
  const { 
@@ -52,29 +57,31 @@ let data = {
 // Load client secrets from a local file.
 try {
     fs.readFile('./client_secret.json', 'utf8', (err, content) => {
+        let lastBlock
         if (err) throw 'Error loading client secret file:' + err
         // Authorize a client with credentials, then call the Google Sheets API.
         // authorize(JSON.parse(content), listMajors);
         // authorize(JSON.parse(content), (a) => auth = a);
         authorize(JSON.parse(content), async (auth) => {
             try {
-                let lastBlock = await fetchLastBlock(auth)            
+                lastBlock = await fetchLastBlock(auth)
+                console.log(lastBlock)         
             } catch (error) {
                 if (error) throw 'Error fetching last block:' + error
             }
             let milestoneData = getMilestoneData(lastBlock, 0, 40, true, null, true, false, "ap6KXg8iJwwUAxBY")   
             data.addresses = milestoneData[0]
-            data.amounts = milestoneData[1] 
+            data.amounts = milestoneData[1]
             data.infoStrings = milestoneData[2]
             data.endBlock = milestoneData[3]
             
             data.inputData = '0x2a17e3970000000000000000000000000000000000000000000000000000000000000020'
-              inputData += web3.utils.padLeft(web3.utils.toHex(addresses.length).slice(2), 64)
-              for(let i = 0; i < addresses.length; i++){
-                inputData += address[i];
-                inputData += web3.utils.padLeft(web3.utils.toHex(amounts[i]).slice(2), 24)
+            data.inputData += web3.utils.padLeft(web3.utils.toHex(addresses.length).slice(2), 64)
+            for(let i = 0; i < addresses.length; i++){
+                data.inputData += address[i];
+                data.inputData += web3.utils.padLeft(web3.utils.toHex(amounts[i]).slice(2), 24)
             }
-            console.log("Transaction data: " +data.inputData)
+            console.log("Transaction data: " + data.inputData)
             let txData = {
                 to:  0x5FcC77CE412131daEB7654b3D18ee89b13d86Cbf,
                 data: data.inputData,

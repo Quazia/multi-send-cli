@@ -292,6 +292,7 @@ module.exports = {
   processUnpacked,
   getCampaigns,
   getCampaignID,
-  getCampaignTitleArray
+  getCampaignTitleArray,
+  getMilestoneData
 }
 
