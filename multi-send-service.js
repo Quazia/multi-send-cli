@@ -30,8 +30,8 @@
  } = require('./sheets') 
   
 
- let addresses = []
- let amounts = []
+let addresses = []
+let amounts = []
 let data = {
     startBlock: undefined,
     endBlock: undefined,
@@ -50,39 +50,57 @@ let data = {
  */
 
 // Load client secrets from a local file.
-fs.readFile('./client_secret.json', 'utf8', (err, content) => {
-    if (err) return console.log('Error loading client secret file:', err);
-    // Authorize a client with credentials, then call the Google Sheets API.
-    // authorize(JSON.parse(content), listMajors);
-    // authorize(JSON.parse(content), (a) => auth = a);
-    authorize(JSON.parse(content), async (auth) => {
-        let lastBlock = await fetchLastBlock(auth)
-        let milestoneData = getMilestoneData(lastBlock, 0, 40, true, null, true, false, "ap6KXg8iJwwUAxBY")   
-        data.addresses = milestoneData[0]
-        data.amounts = milestoneData[1] 
-        data.infoStrings = milestoneData[2]
-        data.endBlock = milestoneData[3]
-        
-        data.inputData = '0x2a17e3970000000000000000000000000000000000000000000000000000000000000020';
-          inputData += web3.utils.padLeft(web3.utils.toHex(addresses.length).slice(2), 64)
-          for(let i = 0; i < addresses.length; i++){
-            inputData += address[i];
-            inputData += web3.utils.padLeft(web3.utils.toHex(amounts[i]).slice(2), 24)
-        }
-        let txData = {
-            to:  0x5FcC77CE412131daEB7654b3D18ee89b13d86Cbf,
-            data: data.inputData,
-            value: data.amountTotal,
-            gasPrice: 40,
-            gas: 700000
-        }
-        let signedTransactionData = await web3.eth.accounts.signTransaction(
-            tx, 
-            "0x43bed288a90702b9b0115a0347fd4ff220c77fe5296f5206c408fdd2e2dba871"
-        )
-        let tX = await web3.eth.sendSignedTransaction(signedTransactionData)
-        data.ropstenTxHash = tX.transactionHash
-        createSheet(auth, data)
-    });
-}); 
+try {
+    fs.readFile('./client_secret.json', 'utf8', (err, content) => {
+        if (err) throw 'Error loading client secret file:' + err
+        // Authorize a client with credentials, then call the Google Sheets API.
+        // authorize(JSON.parse(content), listMajors);
+        // authorize(JSON.parse(content), (a) => auth = a);
+        authorize(JSON.parse(content), async (auth) => {
+            try {
+                let lastBlock = await fetchLastBlock(auth)            
+            } catch (error) {
+                if (error) throw 'Error fetching last block:' + error
+            }
+            let milestoneData = getMilestoneData(lastBlock, 0, 40, true, null, true, false, "ap6KXg8iJwwUAxBY")   
+            data.addresses = milestoneData[0]
+            data.amounts = milestoneData[1] 
+            data.infoStrings = milestoneData[2]
+            data.endBlock = milestoneData[3]
+            
+            data.inputData = '0x2a17e3970000000000000000000000000000000000000000000000000000000000000020'
+              inputData += web3.utils.padLeft(web3.utils.toHex(addresses.length).slice(2), 64)
+              for(let i = 0; i < addresses.length; i++){
+                inputData += address[i];
+                inputData += web3.utils.padLeft(web3.utils.toHex(amounts[i]).slice(2), 24)
+            }
+            console.log("Transaction data: " +data.inputData)
+            let txData = {
+                to:  0x5FcC77CE412131daEB7654b3D18ee89b13d86Cbf,
+                data: data.inputData,
+                value: data.amountTotal,
+                gasPrice: 40,
+                gas: 700000
+            }
+            try {
+                let signedTransactionData = await web3.eth.accounts.signTransaction(
+                    tx, 
+                    "0x43bed288a90702b9b0115a0347fd4ff220c77fe5296f5206c408fdd2e2dba871"
+                )            
+            } catch (error) {
+                if (error) throw 'Error signing transaction:' + err
+            }
+            try {
+                let tX = await web3.eth.sendSignedTransaction(signedTransactionData)
+            } catch (error) {
+                if (error) throw 'Error sending transaction:' + err
+            }
+            data.ropstenTxHash = tX.transactionHash
+            createSheet(auth, data)
+        });
+    });        
+} catch (error) {
+    console.log(error)
+    process.exit(1) 
+}
  

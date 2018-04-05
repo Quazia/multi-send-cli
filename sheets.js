@@ -61,23 +61,24 @@ const getNewToken = (oAuth2Client, callback) => {
 /**
  * Fetch last block from the Milestone triple check sheet
  * @see https://docs.google.com/spreadsheets/d/1laED9If2QT2K4ivXtTmsPXTz56VbYTxuXBhJN4QXqIE/edit#gid=982244464
+ * 1uJnOn_zlmmg-2BmBxzYDc2EjUsf4DgfZqLxFUHNHRB8
  * @param {OAuth2Client} auth The authenticated Google OAuth client.
  */
 const fetchLastBlock = (auth) => {
     return new Promise((resolve, reject) => {
-        const sheets = google.sheets({ version: 'v4', auth });
+        const sheets = google.sheets({ version: 'v4', auth })
         sheets.spreadsheets.get({
-            spreadsheetId: '1laED9If2QT2K4ivXtTmsPXTz56VbYTxuXBhJN4QXqIE',
-        }, (err, { data }) => {
-            if (err) return reject(new Error('The API returned an error: ' + err));
-
+            spreadsheetId: '1uJnOn_zlmmg-2BmBxzYDc2EjUsf4DgfZqLxFUHNHRB8',
+        }, (err, data) => {
+            if (err) return reject(new Error('The API returned an error: ' + err))
             sheets.spreadsheets.values.get({
-                spreadsheetId: '1laED9If2QT2K4ivXtTmsPXTz56VbYTxuXBhJN4QXqIE',
-                range: data.sheets[0].properties.title
-            }, (err, { data }) => {
-                if (err) return reject(new Error('The API returned an error: ' + err));
-                const rows = data.values;
-                if (!rows.length) return reject(new Error('No data found.'));
+                spreadsheetId: '1uJnOn_zlmmg-2BmBxzYDc2EjUsf4DgfZqLxFUHNHRB8',
+                range: data.data.sheets[0].properties.title
+            }, (err, data ) => {
+                if (err) return reject(new Error('The API returned an error: ' + err))
+                if(data.data.values === undefined) return reject(new Error('There is no value in this sheet'))
+                const rows = data.data.values;
+                if (!rows.length) return reject(new Error('No data found.'))
 
                 resolve(rows[0][1]); // B1 = last block
             });
