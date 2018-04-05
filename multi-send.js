@@ -124,10 +124,11 @@ async function askMilestones(status) {
   let answers = await inquirer.prompt(milestoneQs)
   if(answers.doSend){
     let keyAnswer = await inquirer.prompt(askKey)
-    doMilestones(answers.startBlock, answers.endBlock, answers.milestoneDepth, answers.packed, keyAnswer.pKey, answers.doVerify, answers.isTest, "ap6KXg8iJwwUAxBY")
+    let milestoneData = getMilestoneData(answers.startBlock, answers.endBlock, answers.milestoneDepth, answers.packed, keyAnswer.pKey, answers.doVerify, answers.isTest, "ap6KXg8iJwwUAxBY")
   } else {
-    doMilestones(answers.startBlock, answers.endBlock, answers.milestoneDepth, answers.packed, null, answers.doVerify, answers.isTest, "ap6KXg8iJwwUAxBY")    
+    let milestoneData = getMilestoneData(answers.startBlock, answers.endBlock, answers.milestoneDepth, answers.packed, null, answers.doVerify, answers.isTest, "ap6KXg8iJwwUAxBY")    
   }
+  doMilestones(milestoneData[0], milestoneData[1], milestoneData[2], startBlock, milestoneData[3])
 }
 
 program

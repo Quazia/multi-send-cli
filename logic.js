@@ -9,16 +9,18 @@
   */
 require('es6-promise').polyfill();
 require('isomorphic-fetch');
-const bigInt = require("big-integer")
 const assert = require('assert')
 const Web3 = require('web3')
-const provider = `wss://rinkeby.infura.io/ws`
+const provider = `wss://rinkeby.infura.io/_ws`
 const fs = require('fs')
-
-let amountTotal = new bigInt(0)
 
 
 let web3 = new Web3(new Web3.providers.WebsocketProvider(provider))
+
+let BN = Web3.utils.BN
+
+let amountTotal = new BN(0)
+
 
 const HARDCODED_MILESTONE_ADDR =  "0x19Bd4E0DEdb9E5Ee9762391893d1f661404b561f"  // This needs to happen programagically
 
@@ -193,7 +195,10 @@ const getCampaignID = (campaignTitle, campaignJSON) => {
   return null
 }
 
-const doMilestones = (startBlock, endBlock, milestoneDepth, packed, key, verify, test, blockedCampaignId) => {
+const getMilestoneData = (startBlock, endBlock, milestoneDepth, packed, key, verify, test, blockedCampaignId) => {
+  if(endBlock < startBlock){
+    endBlock = web3.eth.blockNumber
+  }
   let milestoneContract = setupContract()
   let addresses = []
   let amounts = []
@@ -216,14 +221,19 @@ const doMilestones = (startBlock, endBlock, milestoneDepth, packed, key, verify,
       if(dappData.campaign._id === blockedCampaignId){
         continue
       }
-      dappAmount = bigInt(dappData.maxAmount, 10)
-      dappAddr = dappData.recipientAddress
+      let dappAmount = new BN(dappData.maxAmount, 10)
+      console.log("Initial Amount: " + dappAmount)
+      let dappAmountAdjustment = dappAmount.mod(new BN(100000000,10))
+      console.log("Adjustment Amount: " + dappAmountAdjustment)
+      dappAmount =  dappAmount.sub(dappAmountAdjustment)
+      console.log("New Amount: " + dappAmount)
+      let dappAddr = dappData.recipientAddress
       
       let infoString = "https://alpha.giveth.io/campaigns/"+dappData.campaign._id+"/milestones/"+dappData._id
       if(verify){
-        if(dappAmount != milestone.maxAmount || dappAddr != milestone.recipient){
-          console.log('Inconsistency found with sending ' + ( dappAmount.divide(10**18) ) + "ETH to " + milestone.recipient)
-          console.log('DApp shows a send of ' + ( dappAmount.divide(10**18) ) + "ETH to " + dappAddr)
+        if(dappData.maxAmount != milestone.maxAmount || dappAddr != milestone.recipient){
+          console.log('Inconsistency found with sending ' + ( dappAmount.divn(10**18) ) + "ETH to " + milestone.recipient)
+          console.log('DApp shows a send of ' + ( dappAmount.divn(10**18) ) + "ETH to " + dappAddr)
           console.log("Somebody in " + dappData.campaign.title +" dun screwed the pooch... \nCampaign ID: " + dappData.campaign._id + "\nMilestone ID: " + dappData._id)
           console.log("Check the milestone at " + infoString)
           continue
@@ -240,15 +250,18 @@ const doMilestones = (startBlock, endBlock, milestoneDepth, packed, key, verify,
       addresses.push(milestone.recipient)
       infoStrings.push(infoString)
     }
-    if(packed){
-      processPacked(addresses, amounts, infoStrings)
-    } else {
-      processUnpacked(addresses, amounts, infoStrings)
-    }
-    generateMilestoneCSV(addresses, amounts, infoStrings, startBlock, currentBlock)
-    
   })
+  return [addresses, amounts, infoStrings, currentBlock]
 }
+const doMilestones = (addresses, amounts, infoStrings, startBlock, currentBlock) => {
+  if(packed){
+    processPacked(addresses, amounts, infoStrings)
+  } else {
+    processUnpacked(addresses, amounts, infoStrings)
+  }
+  generateMilestoneCSV(addresses, amounts, infoStrings, startBlock, currentBlock)
+}
+
 
 const checkAddress = (address) => {
   if(!address.match(/\b0x[0-9A-F]{40}\b/gi)){
@@ -259,24 +272,18 @@ const checkAddress = (address) => {
 
 
 const convertAmount = (amount) => {
-  amount = bigInt(amount, 10)
-  if(amount > bigInt(2).pow(96).subtract(1)){
-    throw new Error("hey, that's too many ethers d00d!  " + amount)
-  }
-  amountTotal = amountTotal.add(amount)
-  amount = amount.toString(16)
+  bnAmount = new BN(amount, 10)
+  /*if(bnAmount.gt((new BN(2)).pow(96).sub(1))){
+    throw new Error("hey, that's too many ethers d00d!  " + bnAmount)
+  }*/
+  console.log("Total amount: " + amountTotal)
+  console.log("Amount to add: " + bnAmount)
+  amountTotal = amountTotal.add(bnAmount)
+  bnAmount = bnAmount.toString(16, 24)
 
-
-  amount = padZeroes(24, amount)
-  return amount
+  return bnAmount
 }
 
-const padZeroes = (length, value) => {
-  while(value.length < length){
-    value = "0" + value
-  }
-  return value
-}
 
 // Export all methods
 module.exports = {
