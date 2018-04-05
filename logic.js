@@ -196,62 +196,67 @@ const getCampaignID = (campaignTitle, campaignJSON) => {
 }
 
 const getMilestoneData = (startBlock, endBlock, milestoneDepth, packed, key, verify, test, blockedCampaignId) => {
-  if(endBlock < startBlock){
-    endBlock = web3.eth.blockNumber
-  }
-  let milestoneContract = setupContract()
-  let addresses = []
-  let amounts = []
-  let infoStrings = []
-  let currentBlock = startBlock
-  milestoneContract.getPastEvents('MilestoneAccepted',
-    {fromBlock: startBlock,  toBlock: endBlock},
-    async (error, logs) => {
-    if (error) console.error(error);
-    for(i = 0; i < logs.length && i < milestoneDepth; i ++) {
-      id = logs[i].returnValues.idProject
-      
-      let milestone = await milestoneContract.methods.getMilestone(id).call()
-      // Make more efficient using roomId[$in]=2&roomId[$in]=5
-      currentBlock = logs[i].blockNumber
-      let dappBody = await fetch("https://feathers.alpha.giveth.io/milestones?projectId="+id)
+  return new Promise(async function(resolve, reject) {
+    if(endBlock < startBlock){
+      endBlock = web3.eth.blockNumber
+    }
+    let milestoneContract = setupContract()
+    let addresses = []
+    let amounts = []
+    let infoStrings = []
+    let milestones = []
+    let currentBlock = startBlock
+    await milestoneContract.getPastEvents('MilestoneAccepted',
+      {fromBlock: startBlock,  toBlock: endBlock},
+      async (error, logs) => {
+      if (error) console.error(error);
+      for(i = 0; i < logs.length && i < milestoneDepth; i ++) {
+        id = logs[i].returnValues.idProject
+        
+        let milestone = await milestoneContract.methods.getMilestone(id).call()
+        // Make more efficient using roomId[$in]=2&roomId[$in]=5
+        currentBlock = logs[i].blockNumber
+        let dappBody = await fetch("https://feathers.alpha.giveth.io/milestones?projectId="+id)
 
-      let dappJSON = await dappBody.json()
-      let dappData = dappJSON.data[0]
-      if(dappData.campaign._id === blockedCampaignId){
-        continue
-      }
-      let dappAmount = new BN(dappData.maxAmount, 10)
-      console.log("Initial Amount: " + dappAmount)
-      let dappAmountAdjustment = dappAmount.mod(new BN(100000000,10))
-      console.log("Adjustment Amount: " + dappAmountAdjustment)
-      dappAmount =  dappAmount.sub(dappAmountAdjustment)
-      console.log("New Amount: " + dappAmount)
-      let dappAddr = dappData.recipientAddress
-      
-      let infoString = "https://alpha.giveth.io/campaigns/"+dappData.campaign._id+"/milestones/"+dappData._id
-      if(verify){
-        if(dappData.maxAmount != milestone.maxAmount || dappAddr != milestone.recipient){
-          console.log('Inconsistency found with sending ' + ( dappAmount.divn(10**18) ) + "ETH to " + milestone.recipient)
-          console.log('DApp shows a send of ' + ( dappAmount.divn(10**18) ) + "ETH to " + dappAddr)
-          console.log("Somebody in " + dappData.campaign.title +" dun screwed the pooch... \nCampaign ID: " + dappData.campaign._id + "\nMilestone ID: " + dappData._id)
-          console.log("Check the milestone at " + infoString)
+        let dappJSON = await dappBody.json()
+        let dappData = dappJSON.data[0]
+        if(dappData.campaign._id === blockedCampaignId){
           continue
         }
+        let dappAmount = new BN(dappData.maxAmount, 10)
+        console.log("Initial Amount: " + dappAmount)
+        let dappAmountAdjustment = dappAmount.mod(new BN(100000000,10))
+        console.log("Adjustment Amount: " + dappAmountAdjustment)
+        dappAmount =  dappAmount.sub(dappAmountAdjustment)
+        console.log("New Amount: " + dappAmount)
+        let dappAddr = dappData.recipientAddress
+        
+        let infoString = "https://alpha.giveth.io/campaigns/"+dappData.campaign._id+"/milestones/"+dappData._id
+        if(verify){
+          if(dappData.maxAmount != milestone.maxAmount || dappAddr != milestone.recipient){
+            console.log('Inconsistency found with sending ' + ( dappAmount.divn(10**18) ) + "ETH to " + milestone.recipient)
+            console.log('DApp shows a send of ' + ( dappAmount.divn(10**18) ) + "ETH to " + dappAddr)
+            console.log("Somebody in " + dappData.campaign.title +" dun screwed the pooch... \nCampaign ID: " + dappData.campaign._id + "\nMilestone ID: " + dappData._id)
+            console.log("Check the milestone at " + infoString)
+            continue
+          }
+        }
+        console.log("Milestone block is " + currentBlock)
+        milestones.push(milestone)
+        // aggregate these data structures into an array of json objects
+        if(test){
+          amounts.push(dappAmount.divide(10**8))        
+        }
+        else{
+          amounts.push(dappAmount)
+        }
+        addAmount(amounts[amounts.length-1])
+        addresses.push(milestone.recipient)
+        infoStrings.push(infoString)
       }
-      console.log("Milestone block is " + currentBlock)
-      // aggregate these data structures into an array of json objects
-      if(test){
-        amounts.push(dappAmount.divide(10**8))        
-      }
-      else{
-        amounts.push(dappAmount)
-      }
-      addresses.push(milestone.recipient)
-      infoStrings.push(infoString)
-    }
-  })
-  return [addresses, amounts, infoStrings, currentBlock]
+      resolve([addresses, amounts, infoStrings, currentBlock, amountTotal, milestones]);
+    })
+  });
 }
 const doMilestones = (addresses, amounts, infoStrings, startBlock, currentBlock) => {
   if(packed){
@@ -271,7 +276,7 @@ const checkAddress = (address) => {
 }
 
 
-const convertAmount = (amount) => {
+const addAmount = (amount) => {
   bnAmount = new BN(amount, 10)
   /*if(bnAmount.gt((new BN(2)).pow(96).sub(1))){
     throw new Error("hey, that's too many ethers d00d!  " + bnAmount)
@@ -279,9 +284,6 @@ const convertAmount = (amount) => {
   console.log("Total amount: " + amountTotal)
   console.log("Amount to add: " + bnAmount)
   amountTotal = amountTotal.add(bnAmount)
-  bnAmount = bnAmount.toString(16, 24)
-
-  return bnAmount
 }
 
 

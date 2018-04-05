@@ -110,7 +110,7 @@ const createSheet = (auth, data) =>{
         const title = data.startBlock + '-' + data.endBlock;
 
         sheets.spreadsheets.batchUpdate({
-            spreadsheetId: '1laED9If2QT2K4ivXtTmsPXTz56VbYTxuXBhJN4QXqIE',
+            spreadsheetId: '1uJnOn_zlmmg-2BmBxzYDc2EjUsf4DgfZqLxFUHNHRB8',
             resource: {
                 requests: [
                     {
@@ -137,9 +137,9 @@ const createSheet = (auth, data) =>{
             for (var i = 0; i < addresses.length; i++) {
                 rows[i + 5] = [
                     addresses[i],
-                    // utils.toBN(amounts[i]).divn(1e18).toString(),
-                    amounts[i].divide(1e18).toString(),
-                    amounts[i].toString(),
+                    amounts[i],
+                    //amounts[i].div(1e18).toString(),
+                    amounts[i],
                     '',
                     '', // checker #1
                     '', // checker #2
@@ -157,7 +157,7 @@ const createSheet = (auth, data) =>{
             }
 
             sheets.spreadsheets.values.update({
-                spreadsheetId: '1laED9If2QT2K4ivXtTmsPXTz56VbYTxuXBhJN4QXqIE',
+                spreadsheetId: '1uJnOn_zlmmg-2BmBxzYDc2EjUsf4DgfZqLxFUHNHRB8',
                 range: `${title}!A1:P${data.addresses.length + 5}`,
                 valueInputOption: "USER_ENTERED",
                 resource: {
