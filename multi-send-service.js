@@ -18,7 +18,10 @@
  // Here are the IDs for Governance, Social Coding, Communications and the DApp respectively.
  // For a full list of campaign IDs go to the following URL
  // https://feathers.alpha.giveth.io/campaigns?$select[]=title&$select[]=_id
- const CAMPIGN_IDS = ["Bub3WLo6jmlG8V6j", "NMhA6QLwfsUmPQld", "R1WkS0obautijkvJ", "fzOahNwFVyY7qLTI"]
+ const CORE_IDS = ["Bub3WLo6jmlG8V6j", "NMhA6QLwfsUmPQld", "R1WkS0obautijkvJ", "fzOahNwFVyY7qLTI"]
+ const SCALING_NOW_ID = ["ap6KXg8iJwwUAxBY"]
+ const DAPP_NODE_ID = ["OcKJryNwjeidMXi9"]
+
 
 const Web3 = require('web3')
 const provider = `wss://rinkeby.infura.io/_ws`
@@ -80,7 +83,7 @@ try {
         }
 
         try {
-            milestoneData = await getMilestoneData(lastBlock, 0, 40, true, null, true, false, CAMPIGN_IDS)
+            milestoneData = await getMilestoneData(lastBlock, 0, 40, true, null, true, false, CORE_IDS)
         } catch (error) {
             console.log('Error getting milestone data:' + err)          
             process.exit(1) 

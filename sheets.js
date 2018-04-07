@@ -6,6 +6,10 @@ const SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 const TOKEN_PATH = 'credentials.json'
 const bigInt = require("big-integer")
 const { utils } = require('web3')
+// Core sheet:: 1uJnOn_zlmmg-2BmBxzYDc2EjUsf4DgfZqLxFUHNHRB8
+// Test sheet:: 1MT7jXqaSFON9ggSimrr_EKm16JsYCS_5f33dbYaD38o
+// Scaling Now sheet:: 1rE5FCqEE7DW-56tnvM9FhAZs79b1g6r4-xA3HDJlj0c
+// DAppNode sheet:: 1K3yWBcBtdOAhQnGWhGxYRUmCZwCh5WeKViacJti-khk
 const SPREADSHEET_ID = '1MT7jXqaSFON9ggSimrr_EKm16JsYCS_5f33dbYaD38o'
 const BN = utils.BN
 
