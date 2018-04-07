@@ -56,71 +56,86 @@ let data = {
 
 // Load client secrets from a local file.
 try {
-    fs.readFile('./client_secret.json', 'utf8', (err, content) => {
-        let lastBlock
-        let signedTransactionData 
-        let tX 
+    fs.readFile('./client_secret.json', 'utf8', async (err, content) => {
+        let lastBlock, signedTransactionData, tX, txData, auth
         if (err) throw 'Error loading client secret file:' + err
-        // Authorize a client with credentials, then call the Google Sheets API.
-        // authorize(JSON.parse(content), listMajors);
-        // authorize(JSON.parse(content), (a) => auth = a);
-        authorize(JSON.parse(content), async (auth) => {
-            try {
-                lastBlock = await fetchLastBlock(auth)
-            } catch (err) {
-                throw 'Error fetching last block:' + err
-            }
-            let milestoneData = await getMilestoneData(lastBlock, 0, 40, true, null, true, false, "ap6KXg8iJwwUAxBY")   
+        
+        try {
+            auth = await authorize(JSON.parse(content))
+        } catch (err) {
+            console.log("Issue authorizing the secret with Google API: " + err)
+            process.exit(1) 
+        }
+        console.log(auth)
 
-            data.addresses = milestoneData[0]
-            data.amounts = milestoneData[1]
-            data.infoStrings = milestoneData[2]
-            data.endBlock = milestoneData[3]
-            data.amountTotal = milestoneData[4]
-            data.milestones = milestoneData[5]
+        try {
+            lastBlock = await fetchLastBlock(auth)
+        } catch (err) {
+            console.log('Error fetching last block:' + err)
+            process.exit(1) 
+        }
 
-            data.inputData = '0x2a17e3970000000000000000000000000000000000000000000000000000000000000020'
-            data.inputData += web3.utils.padLeft(web3.utils.toHex(data.addresses.length).slice(2), 64)
-            for(let i = 0; i < data.addresses.length; i++){
-                data.inputData += data.addresses[i].slice(2);
-                data.inputData += web3.utils.padLeft(web3.utils.toHex(data.amounts[i]).slice(2), 24)
+        try {
+            milestoneData = await getMilestoneData(lastBlock, 0, 40, true, null, true, false, "ap6KXg8iJwwUAxBY")               
+        } catch (error) {
+            console.log('Error getting milestone data:' + err)          
+            process.exit(1) 
+        }
+
+        data.addresses = milestoneData[0]
+        data.amounts = milestoneData[1]
+        data.infoStrings = milestoneData[2]
+        data.endBlock = milestoneData[3]
+        data.amountTotal = milestoneData[4]
+        data.milestones = milestoneData[5]
+
+        // Needs to be split out into a seperate function in logic.js
+        data.inputData = '0x2a17e3970000000000000000000000000000000000000000000000000000000000000020'
+        data.inputData += web3.utils.padLeft(web3.utils.toHex(data.addresses.length).slice(2), 64)
+        for(let i = 0; i < data.addresses.length; i++){
+            data.inputData += data.addresses[i].slice(2);
+            data.inputData += web3.utils.padLeft(web3.utils.toHex(data.amounts[i]).slice(2), 24)
+        }
+
+        console.log("Transaction data: " + data.inputData)
+        console.log("TotalAmount:" + data.amountTotal)
+        
+        txData = {
+            to:  "0x5FcC77CE412131daEB7654b3D18ee89b13d86Cbf",
+            data: data.inputData,
+            value: data.amountTotal,
+            gasPrice: 45000000000,
+            gas: 700000
+        }
+        try {
+            signedTransactionData = await web3.eth.accounts.signTransaction(
+                txData, 
+                "0x43bed288a90702b9b0115a0347fd4ff220c77fe5296f5206c408fdd2e2dba871"
+            )            
+        } catch (error) {
+            console.log('Error signing transaction:' + error)
+            process.exit(1) 
+        }
+        web3.eth.sendSignedTransaction(signedTransactionData.rawTransaction)
+        .on('transactionHash', (hash) => {
+            data.ropstenTxHash = hash    
+        })
+        .on('error', (error) => {
+            if(error.toString().indexOf("known transaction") >= 0){
+                data.ropstenTxHash = error.toString().slice(43)
+            } else {
+                console.log('Error sending transaction:' + error)
+                process.exit(1) 
             }
-            console.log("Transaction data: " + data.inputData)
-            console.log("TotalAmount:" + data.amountTotal)
-            let txData = {
-                to:  "0x5FcC77CE412131daEB7654b3D18ee89b13d86Cbf",
-                data: data.inputData,
-                value: data.amountTotal,
-                gasPrice: 45000000000,
-                gas: 700000
-            }
-            try {
-                signedTransactionData = await web3.eth.accounts.signTransaction(
-                    txData, 
-                    "0x43bed288a90702b9b0115a0347fd4ff220c77fe5296f5206c408fdd2e2dba871"
-                )            
-            } catch (error) {
-                if (error) throw 'Error signing transaction:' + error
-            }
-            try {
-                web3.eth.sendSignedTransaction(signedTransactionData.rawTransaction)
-                .on('transactionHash', (hash) => {
-                    data.ropstenTxHash = hash    
-                });
-            } catch (error) {
-                if(error.toString().indexOf("known transaction") >= 0){
-                    data.ropstenTxHash = error.toString().slice(43)
-                } else {
-                    throw 'Error sending transaction:' + error
-                }
-            }
-            try {
-                await createSheet(auth, data)
-            } catch (error) {
-                throw error;
-            }
-        });
-    });        
+        })
+        try {
+            await createSheet(auth, data)
+            process.exit(1)
+        } catch (error) {
+            console.log('issue creating sheet' + error);
+            process.exit(1) 
+        }
+    }) // end readFile
 } catch (error) {
     console.log(error)
     process.exit(1) 
