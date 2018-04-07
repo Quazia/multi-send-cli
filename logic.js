@@ -195,7 +195,7 @@ const getCampaignID = (campaignTitle, campaignJSON) => {
   return null
 }
 
-const getMilestoneData = (startBlock, endBlock, milestoneDepth, packed, key, verify, test, blockedCampaignId) => {
+const getMilestoneData = (startBlock, endBlock, milestoneDepth, packed, key, verify, test, campaignIDs) => {
   return new Promise(async function(resolve, reject) {
     if(endBlock < startBlock){
       endBlock = web3.eth.blockNumber
@@ -216,11 +216,11 @@ const getMilestoneData = (startBlock, endBlock, milestoneDepth, packed, key, ver
         let milestone = await milestoneContract.methods.getMilestone(id).call()
         // Make more efficient using roomId[$in]=2&roomId[$in]=5
         currentBlock = logs[i].blockNumber
-        let dappBody = await fetch("https://feathers.alpha.giveth.io/milestones?projectId="+id)
+        let dappBody = await fetch("https://feathers.alpha.giveth.io/milestones?projectId=" + id)
 
         let dappJSON = await dappBody.json()
         let dappData = dappJSON.data[0]
-        if(dappData.campaign._id === blockedCampaignId){
+        if(campaignIDs.indexOf(dappData.campaign._id) === -1){
           continue
         }
         let dappAmount = new BN(dappData.maxAmount, 10)
