@@ -95,7 +95,7 @@ const askKey = [
   {
     type : 'input',
     name : 'pKey',
-    message : 'Let me get that key tho sweet thaaaaaaangggg'
+    message : 'please enter your key'
   }
 ]
 

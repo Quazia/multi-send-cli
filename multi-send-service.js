@@ -67,9 +67,8 @@ try {
         authorize(JSON.parse(content), async (auth) => {
             try {
                 lastBlock = await fetchLastBlock(auth)
-                console.log(lastBlock)         
-            } catch (error) {
-                if (error) throw 'Error fetching last block:' + error
+            } catch (err) {
+                throw 'Error fetching last block:' + err
             }
             let milestoneData = await getMilestoneData(lastBlock, 0, 40, true, null, true, false, "ap6KXg8iJwwUAxBY")   
 
@@ -104,7 +103,6 @@ try {
                 if (error) throw 'Error signing transaction:' + error
             }
             try {
-                console.log(signedTransactionData.rawTransaction)
                 web3.eth.sendSignedTransaction(signedTransactionData.rawTransaction)
                 .on('transactionHash', (hash) => {
                     data.ropstenTxHash = hash    
@@ -116,7 +114,11 @@ try {
                     throw 'Error sending transaction:' + error
                 }
             }
-            await createSheet(auth, data)
+            try {
+                await createSheet(auth, data)
+            } catch (error) {
+                throw error;
+            }
         });
     });        
 } catch (error) {

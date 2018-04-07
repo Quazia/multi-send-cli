@@ -1,11 +1,13 @@
-const fs = require('fs');
-const readline = require('readline');
-const { google } = require('googleapis');
-const OAuth2Client = google.auth.OAuth2;
-const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
-const TOKEN_PATH = 'credentials.json';
+const fs = require('fs')
+const readline = require('readline')
+const { google } = require('googleapis')
+const OAuth2Client = google.auth.OAuth2
+const SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
+const TOKEN_PATH = 'credentials.json'
 const bigInt = require("big-integer")
 const { utils } = require('web3')
+const SPREADSHEET_ID = '1uJnOn_zlmmg-2BmBxzYDc2EjUsf4DgfZqLxFUHNHRB8'
+const BN = utils.BN
 
 
 
@@ -68,11 +70,11 @@ const fetchLastBlock = (auth) => {
     return new Promise((resolve, reject) => {
         const sheets = google.sheets({ version: 'v4', auth })
         sheets.spreadsheets.get({
-            spreadsheetId: '1uJnOn_zlmmg-2BmBxzYDc2EjUsf4DgfZqLxFUHNHRB8',
+            spreadsheetId: SPREADSHEET_ID,
         }, (err, data) => {
             if (err) return reject(new Error('The API returned an error: ' + err))
             sheets.spreadsheets.values.get({
-                spreadsheetId: '1uJnOn_zlmmg-2BmBxzYDc2EjUsf4DgfZqLxFUHNHRB8',
+                spreadsheetId: SPREADSHEET_ID,
                 range: data.data.sheets[0].properties.title
             }, (err, data ) => {
                 if (err) return reject(new Error('The API returned an error: ' + err))
@@ -110,7 +112,7 @@ const createSheet = (auth, data) =>{
         const title = data.startBlock + '-' + data.endBlock;
 
         sheets.spreadsheets.batchUpdate({
-            spreadsheetId: '1uJnOn_zlmmg-2BmBxzYDc2EjUsf4DgfZqLxFUHNHRB8',
+            spreadsheetId: SPREADSHEET_ID,
             resource: {
                 requests: [
                     {
@@ -129,17 +131,15 @@ const createSheet = (auth, data) =>{
             rows = [];
             rows[0] = ['lastBlock', data.endBlock];
             rows[1] = ['inputData', data.inputData];
-            rows[2] = ['amountTotal', '0x' + data.amountTotal.toString(16)];
-            rows[3] = ['ropstenTx', `https://ropsten.etherscan.io/tx/${data.ropstenTxHash}`];
+            rows[2] = ['amountTotal',data.amountTotal.toString(10), 'amountTotal hex', '0x' + data.amountTotal.toString(16)];
+            rows[3] = ['rinkebyTx', `https://rinkeby.etherscan.io/tx/${data.ropstenTxHash}`];
             rows[4] = ['Receiving Address', 'Amount in ETH', 'amount in wei', 'Receiving address Check', 'Checker #1', 'Checker #2', 'Do all links work', 'Exchange Service', 'Exchange rate', 'Exchange rate DATE', 'off by(in ETH)', 'test amount in wei', 'Ropsten Test Check', 'Campaign', 'Notes', 'Milestone'];
-
             const { addresses, amounts, milestones } = data;
             for (var i = 0; i < addresses.length; i++) {
                 rows[i + 5] = [
                     addresses[i],
-                    amounts[i],
-                    //amounts[i].div(1e18).toString(),
-                    amounts[i],
+                    utils.fromWei(amounts[i]).toString(),
+                    amounts[i].toString(),
                     '',
                     '', // checker #1
                     '', // checker #2
@@ -149,7 +149,7 @@ const createSheet = (auth, data) =>{
                     '', // Exchange Rate Date,
                     '', // off by in eth
                     '', // test amount
-                    '', // ropsten test check
+                    '', // rinkeby test check
                     milestones[i].campaign,
                     '', // notes
                     milestones[i].url,
@@ -157,7 +157,7 @@ const createSheet = (auth, data) =>{
             }
 
             sheets.spreadsheets.values.update({
-                spreadsheetId: '1uJnOn_zlmmg-2BmBxzYDc2EjUsf4DgfZqLxFUHNHRB8',
+                spreadsheetId: SPREADSHEET_ID,
                 range: `${title}!A1:P${data.addresses.length + 5}`,
                 valueInputOption: "USER_ENTERED",
                 resource: {

@@ -241,6 +241,8 @@ const getMilestoneData = (startBlock, endBlock, milestoneDepth, packed, key, ver
             continue
           }
         }
+        milestone.url = infoString
+        milestone.campaign = dappData.campaign.title
         console.log("Milestone block is " + currentBlock)
         milestones.push(milestone)
         // aggregate these data structures into an array of json objects
