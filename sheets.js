@@ -10,7 +10,7 @@ const { utils } = require('web3')
 // Test sheet:: 1MT7jXqaSFON9ggSimrr_EKm16JsYCS_5f33dbYaD38o
 // Scaling Now sheet:: 1rE5FCqEE7DW-56tnvM9FhAZs79b1g6r4-xA3HDJlj0c
 // DAppNode sheet:: 1K3yWBcBtdOAhQnGWhGxYRUmCZwCh5WeKViacJti-khk
-const SPREADSHEET_ID = '1MT7jXqaSFON9ggSimrr_EKm16JsYCS_5f33dbYaD38o'
+const SPREADSHEET_ID = '1uJnOn_zlmmg-2BmBxzYDc2EjUsf4DgfZqLxFUHNHRB8'
 const BN = utils.BN
 
 
@@ -142,26 +142,49 @@ const createSheet = (auth, data) =>{
             rows[1] = ['inputData', data.inputData];
             rows[2] = ['amountTotal',data.amountTotal.toString(10), 'amountTotal hex', '0x' + data.amountTotal.toString(16)];
             rows[3] = ['rinkebyTx', `https://rinkeby.etherscan.io/tx/${data.ropstenTxHash}`];
-            rows[4] = ['Receiving Address', 'Amount in ETH', 'amount in wei', 'Receiving address Check', 'Checker #1', 'Checker #2', 'Do all links work', 'Exchange Service', 'Exchange rate', 'Exchange rate DATE', 'off by(in ETH)', 'test amount in wei', 'Ropsten Test Check', 'Campaign', 'Notes', 'Milestone'];
+            rows[4] = [
+                'Receiving Address',
+                'Amount in ETH', 
+                'amount in wei', 
+                'SHAME?', 
+                'Checker', 
+                'Recipient?', 
+                'Who Proposed?',
+                'Campaign Manager', 
+                'Reviewer', 
+                'Do all links work',
+                'DATE Check', 
+                'Test Addy', 
+                'Test Amount', 
+                'Amount in Milestone', 
+                'off by(in ETH)?', 
+                'is it beautiful', 
+                'Campaign', 
+                'Notes/Why Shame', 
+                'Milestone'
+            ];
             const { addresses, amounts, milestones } = data;
             for (var i = 0; i < addresses.length; i++) {
                 rows[i + 5] = [
-                    addresses[i],
-                    utils.fromWei(amounts[i]).toString(),
-                    amounts[i].toString(),
-                    '',
-                    '', // checker #1
-                    '', // checker #2
-                    '',
-                    '',
-                    '', // Exchange Rate
-                    '', // Exchange Rate Date,
-                    '', // off by in eth
+                    addresses[i], // receiving address
+                    utils.fromWei(amounts[i]).toString(), // amount in eth
+                    amounts[i].toString(), // amount in wei
+                    '', // Shame?
+                    '', // checker
+                    '', // Recipient?
+                    '', // Who Proposed?
+                    '', // Campaign Manager
+                    '', // Reviewer
+                    '', // Do all links work
+                    '', // DATE Check
+                    '', // Test Addy
                     '', // test amount
-                    '', // rinkeby test check
-                    milestones[i].campaign,
-                    '', // notes
-                    milestones[i].url,
+                    '', // Amount in Milestone
+                    '', // off by(in ETH)?
+                    '', // is it beautiful
+                    milestones[i].campaign, // Campaign
+                    '', // Notes/Why Shame
+                    milestones[i].url // Milestone
                 ];
             }
 
