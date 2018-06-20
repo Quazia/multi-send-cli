@@ -206,58 +206,67 @@ const getMilestoneData = (startBlock, endBlock, milestoneDepth, packed, key, ver
     let infoStrings = []
     let milestones = []
     let currentBlock = startBlock
-    await milestoneContract.getPastEvents('MilestoneAccepted',
-      {fromBlock: startBlock,  toBlock: endBlock},
-      async (error, logs) => {
-      if (error) console.error(error);
-      for(i = 0; i < logs.length && i < milestoneDepth; i ++) {
-        id = logs[i].returnValues.idProject
-        
-        let milestone = await milestoneContract.methods.getMilestone(id).call()
-        // Make more efficient using roomId[$in]=2&roomId[$in]=5
-        currentBlock = logs[i].blockNumber
-        let dappBody = await fetch("https://feathers.alpha.giveth.io/milestones?projectId=" + id)
-
-        let dappJSON = await dappBody.json()
-        let dappData = dappJSON.data[0]
-        if(campaignIDs.indexOf(dappData.campaign._id) === -1){
-          continue
-        }
-        let dappAmount = new BN(dappData.maxAmount, 10)
-        console.log("Initial Amount: " + dappAmount)
-        let dappAmountAdjustment = dappAmount.mod(new BN(100000000,10))
-        console.log("Adjustment Amount: " + dappAmountAdjustment)
-        dappAmount =  dappAmount.sub(dappAmountAdjustment)
-        console.log("New Amount: " + dappAmount)
-        let dappAddr = dappData.recipientAddress
-        
-        let infoString = "https://alpha.giveth.io/campaigns/"+dappData.campaign._id+"/milestones/"+dappData._id
-        if(verify){
-          if(dappData.maxAmount != milestone.maxAmount || dappAddr != milestone.recipient){
-            console.log('Inconsistency found with sending ' + ( dappAmount.divn(10**18) ) + "ETH to " + milestone.recipient)
-            console.log('DApp shows a send of ' + ( dappAmount.divn(10**18) ) + "ETH to " + dappAddr)
-            console.log("Somebody in " + dappData.campaign.title +" dun screwed the pooch... \nCampaign ID: " + dappData.campaign._id + "\nMilestone ID: " + dappData._id)
-            console.log("Check the milestone at " + infoString)
+    try {
+      await milestoneContract.getPastEvents('MilestoneAccepted',
+        {fromBlock: startBlock,  toBlock: endBlock},
+        async (error, logs) => {
+        if (error) console.error(error);
+        for(i = 0; i < logs.length && i < milestoneDepth; i ++) {
+          id = logs[i].returnValues.idProject
+          
+          // Make more efficient using roomId[$in]=2&roomId[$in]=5
+          let dappBody, dappJSON, milestone
+          try {
+            milestone = await milestoneContract.methods.getMilestone(id).call()
+            currentBlock = logs[i].blockNumber
+            dappBody = await fetch("https://feathers.alpha.giveth.io/milestones?projectId=" + id)
+            dappJSON = await dappBody.json()
+          } catch (error) {
+            console.log("issue with project ID: " + id)
             continue
           }
+          let dappData = dappJSON.data[0]
+          if(campaignIDs.indexOf(dappData.campaign._id) === -1){
+            continue
+          }
+          let dappAmount = new BN(dappData.maxAmount, 10)
+          console.log("Initial Amount: " + dappAmount)
+          let dappAmountAdjustment = dappAmount.mod(new BN(100000000,10))
+          console.log("Adjustment Amount: " + dappAmountAdjustment)
+          dappAmount =  dappAmount.sub(dappAmountAdjustment)
+          console.log("New Amount: " + dappAmount)
+          let dappAddr = dappData.recipientAddress
+          let infoString = "https://alpha.giveth.io/campaigns/"+dappData.campaign._id+"/milestones/"+dappData._id
+          if(verify){
+            if(dappData.maxAmount != milestone.maxAmount || dappAddr != milestone.recipient){
+              console.log('Inconsistency found with sending ' + ( web3.utils.fromWei(dappData.maxAmount).toString() ) + "ETH to " + milestone.recipient)
+              console.log('DApp shows a send of ' + ( web3.utils.fromWei(dappData.maxAmount).toString() ) + "ETH to " + dappAddr)
+              console.log('Main chain shows a send of ' + ( web3.utils.fromWei(milestone.maxAmount).toString() ) + "ETH to " + milestone.recipient)
+              console.log("Somebody in " + dappData.campaign.title +" dun screwed the pooch... \nCampaign ID: " + dappData.campaign._id + "\nMilestone ID: " + dappData._id)
+              console.log("Check the milestone at " + infoString)
+              continue
+            }
+          }
+          milestone.url = infoString
+          milestone.campaign = dappData.campaign.title
+          console.log("Milestone block is " + currentBlock)
+          milestones.push(milestone)
+          // aggregate these data structures into an array of json objects
+          if(test){
+            amounts.push(dappAmount.divide(10**8))        
+          }
+          else{
+            amounts.push(dappAmount)
+          }
+          addAmount(amounts[amounts.length-1])
+          addresses.push(milestone.recipient)
+          infoStrings.push(infoString)
         }
-        milestone.url = infoString
-        milestone.campaign = dappData.campaign.title
-        console.log("Milestone block is " + currentBlock)
-        milestones.push(milestone)
-        // aggregate these data structures into an array of json objects
-        if(test){
-          amounts.push(dappAmount.divide(10**8))        
-        }
-        else{
-          amounts.push(dappAmount)
-        }
-        addAmount(amounts[amounts.length-1])
-        addresses.push(milestone.recipient)
-        infoStrings.push(infoString)
-      }
-      resolve([addresses, amounts, infoStrings, currentBlock, amountTotal, milestones]);
-    })
+        resolve([addresses, amounts, infoStrings, currentBlock, amountTotal, milestones]);
+      })  
+    } catch (error) {
+      reject(error)
+    }
   });
 }
 const doMilestones = (addresses, amounts, infoStrings, startBlock, currentBlock) => {

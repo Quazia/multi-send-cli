@@ -21,10 +21,12 @@
  const CORE_IDS = ["Bub3WLo6jmlG8V6j", "NMhA6QLwfsUmPQld", "R1WkS0obautijkvJ", "fzOahNwFVyY7qLTI"]
  const SCALING_NOW_ID = ["ap6KXg8iJwwUAxBY"]
  const DAPP_NODE_ID = ["OcKJryNwjeidMXi9"]
+ const MIGRATION = ["Wze7njNMv5Z68M2X"]
+ const MIGRATION_AND_CORE = ["Wze7njNMv5Z68M2X", "Bub3WLo6jmlG8V6j", "NMhA6QLwfsUmPQld", "R1WkS0obautijkvJ", "fzOahNwFVyY7qLTI"]
 
 
 const Web3 = require('web3')
-const provider = `wss://rinkeby.infura.io/_ws`
+const provider = `wss://rinkeby.infura.io/ws`
 let web3 = new Web3(new Web3.providers.WebsocketProvider(provider))
 
  
@@ -83,12 +85,11 @@ try {
         }
 
         try {
-            milestoneData = await getMilestoneData(lastBlock, 0, 40, true, null, true, false, CORE_IDS)
+            milestoneData = await getMilestoneData(lastBlock, 0, 300, true, null, true, false, CORE_IDS)
         } catch (error) {
             console.log('Error getting milestone data:' + err)          
             process.exit(1) 
         }
-
         data.addresses = milestoneData[0]
         data.amounts = milestoneData[1]
         data.infoStrings = milestoneData[2]
@@ -120,22 +121,22 @@ try {
                 txData, 
                 "0x43bed288a90702b9b0115a0347fd4ff220c77fe5296f5206c408fdd2e2dba871"
             )            
+            web3.eth.sendSignedTransaction(signedTransactionData.rawTransaction)
+            .on('transactionHash', (hash) => {
+                data.ropstenTxHash = hash    
+            })
+            .on('error', (error) => {
+                if(error.toString().indexOf("known transaction") >= 0){
+                    data.ropstenTxHash = error.toString().slice(43)
+                } else {
+                    console.log('Error sending transaction:' + error)
+                    console.log('Continuing to sheet creation with invalid test send')
+                }
+            })
         } catch (error) {
             console.log('Error signing transaction:' + error)
-            process.exit(1) 
+            console.log('Continuing to sheet creation with invalid test send')            
         }
-        web3.eth.sendSignedTransaction(signedTransactionData.rawTransaction)
-        .on('transactionHash', (hash) => {
-            data.ropstenTxHash = hash    
-        })
-        .on('error', (error) => {
-            if(error.toString().indexOf("known transaction") >= 0){
-                data.ropstenTxHash = error.toString().slice(43)
-            } else {
-                console.log('Error sending transaction:' + error)
-                console.log('Continuing to sheet creation with invalid test send')
-            }
-        })
         try {
             await createSheet(auth, data)
             console.log('Sheet created successfully')

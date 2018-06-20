@@ -190,7 +190,7 @@ const createSheet = (auth, data) =>{
 
             sheets.spreadsheets.values.update({
                 spreadsheetId: SPREADSHEET_ID,
-                range: `${title}!A1:P${data.addresses.length + 5}`,
+                range: `${title}!A1:S${data.addresses.length + 5}`,
                 valueInputOption: "USER_ENTERED",
                 resource: {
                     values: rows
