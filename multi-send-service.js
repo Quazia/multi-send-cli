@@ -85,7 +85,7 @@ try {
         }
 
         try {
-            milestoneData = await getMilestoneData(lastBlock, 0, 300, true, null, true, false, CORE_IDS)
+            milestoneData = await getMilestoneData(lastBlock, 0, 300, true, null, true, false, MIGRATION)
         } catch (error) {
             console.log('Error getting milestone data:' + err)          
             process.exit(1) 
